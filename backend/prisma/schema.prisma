@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../../data/database.dat"
+}
+
+model Serialport {
+  id          Int       @id @default(autoincrement())
+  name        String?
+  path        String
+  baudrate    Int?
+  update_time DateTime? @default(now())
+  create_time DateTime? @default(now())
+}
+
+model Callback {
+  id          Int       @id @default(autoincrement())
+  body        String?
+  update_time DateTime? @default(now())
+  create_time DateTime? @default(now())
+}
+
+model Message {
+  id             Int       @id @default(autoincrement())
+  uid            String    @unique
+  type           String
+  from           String?
+  to             String?
+  content        String
+  status         Int       @default(1)
+  msg_time       DateTime? @default(now())
+  operation_time DateTime? @default(now())
+  update_time    DateTime? @default(now())
+  create_time    DateTime? @default(now())
+}

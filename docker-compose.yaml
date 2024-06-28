@@ -1,0 +1,11 @@
+version: "3"
+services:
+  air780eg:
+    build:
+      context: .
+    ports:
+      - 53000:3000
+    privileged: true
+    volumes:
+      - /dev:/dev
+      - ${PWD}/data:/app/data

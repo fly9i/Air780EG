@@ -1,7 +1,9 @@
 <script setup>
 import { ref, onMounted, watch, useAttrs, computed, inject } from 'vue'
 import { NInfiniteScroll, NTag, NTooltip, useMessage } from 'naive-ui';
+import { useClipboard } from '@vueuse/core';
 const globalSettings = inject('globalSettings');
+const { copy, isSupported } = useClipboard();
 const $l = computed(() => globalSettings.$l)
 const props = defineProps({
     list: {
@@ -36,7 +38,7 @@ function change() {
             item[k] = it[k]
         }
         item.tags = [];
-        console.log(item.content)
+        // console.log(item.content)
         while (true) {
             let r = numReg.exec(item.content);
             if (!r) {
@@ -66,8 +68,8 @@ onMounted(() => {
     change()
 })
 const message = useMessage();
-const copy = (value) => {
-    navigator.clipboard.writeText(value)
+const copyTo = (value) => {
+    copy(value)
     message.success($l.value['copySuccess'])
 }
 </script>
@@ -95,7 +97,7 @@ const copy = (value) => {
 
                 <n-tooltip trigger="hover" v-for="it, idx in item.tags" :key="idx">
                     <template #trigger>
-                        <n-tag class="cursor-pointer" size="small" type="info" @click="copy(it.value)">{{ it.value
+                        <n-tag class="cursor-pointer" size="small" type="info" @click="copyTo(it.value)">{{ it.value
                             }}</n-tag>
                     </template>
                     {{ $l['click2Copy'] }}

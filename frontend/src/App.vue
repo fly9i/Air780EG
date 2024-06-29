@@ -1,6 +1,7 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
-import { NTabs, NTabPane, NMessageProvider, NNotificationProvider, useNotification, createDiscreteApi } from 'naive-ui'
+import { NTabs, NTabPane, NMessageProvider, NNotificationProvider, useNotification, createDiscreteApi, NConfigProvider,darkTheme } from 'naive-ui'
+
 import HomeView from './views/HomeView.vue'
 import Settings from './views/Settings.vue'
 // import HelloWorld  from './components/HelloWorld.vue'
@@ -54,23 +55,25 @@ onUnmounted(() => {
   <!-- <RouterLink to="/">Home</RouterLink> -->
 
   <!-- <RouterView /> -->
-  <n-message-provider>
-    <NNotificationProvider>
-      <div class="w-full flex flex-col justify-center items-center">
-        <div class="w-1/2  min-w-96 h-screen tabs flex">
-          <n-tabs type="line" class="h-full" animated>
-            <n-tab-pane name="msg" :tab="$l['message']">
+  <n-config-provider :theme="darkTheme">
+    <n-message-provider>
+      <NNotificationProvider>
+        <div class="w-full flex flex-col justify-center items-center">
+          <div class="w-1/2  min-w-96 h-screen tabs flex">
+            <n-tabs type="line" class="h-full" animated>
+              <n-tab-pane name="msg" :tab="$l['message']">
 
-              <home-view />
-            </n-tab-pane>
-            <n-tab-pane name="settings" :tab="$l['settings']">
-              <settings></settings>
-            </n-tab-pane>
-          </n-tabs>
+                <home-view />
+              </n-tab-pane>
+              <n-tab-pane name="settings" :tab="$l['settings']">
+                <settings></settings>
+              </n-tab-pane>
+            </n-tabs>
+          </div>
         </div>
-      </div>
-    </NNotificationProvider>
-  </n-message-provider>
+      </NNotificationProvider>
+    </n-message-provider>
+  </n-config-provider>
 </template>
 
 <style scoped>

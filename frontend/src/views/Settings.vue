@@ -149,7 +149,7 @@ const getSerialPorts = async () => {
 }
 
 const serialportChange = async (val) => {
-    console.log(val)
+    // console.log(val)
     let res = await fetch('/api/setserialport', {
         method: 'POST',
         headers: {
@@ -215,7 +215,7 @@ const getCallback = async () => {
     let json = await res.json();
 
     if (json?.data) {
-        console.log(json.data.body)
+        // console.log(json.data.body)
         callbackconfig.value = json.data.body;
     }
     // pushOptions.value = await res.json();

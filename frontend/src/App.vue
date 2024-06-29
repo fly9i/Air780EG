@@ -1,7 +1,7 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import { NTabs, NTabPane, NMessageProvider, NNotificationProvider, useNotification, createDiscreteApi, NConfigProvider,darkTheme } from 'naive-ui'
-
+import { useDark } from '@vueuse/core'
 import HomeView from './views/HomeView.vue'
 import Settings from './views/Settings.vue'
 // import HelloWorld  from './components/HelloWorld.vue'
@@ -16,7 +16,8 @@ import { wsHost } from '@/module/const.js';
 import { useCounterStore } from './stores/counter.js'
 const globalSettings = inject('globalSettings');
 const $l = computed(() => globalSettings.$l)
-
+const isDark = useDark();
+console.log(isDark)
 const counter = useCounterStore();
 
 let ws = null;
@@ -55,7 +56,7 @@ onUnmounted(() => {
   <!-- <RouterLink to="/">Home</RouterLink> -->
 
   <!-- <RouterView /> -->
-  <n-config-provider :theme="darkTheme">
+  <n-config-provider :theme="isDark ? darkTheme : undefined">
     <n-message-provider>
       <NNotificationProvider>
         <div class="w-full flex flex-col justify-center items-center">

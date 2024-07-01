@@ -53,6 +53,7 @@ async function updateSimSms(port) {
         }
     }
 }
+
 async function init() {
     if (port && port.isOpen()) {
         await port.close()

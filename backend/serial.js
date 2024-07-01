@@ -92,10 +92,26 @@ String.prototype.format = function (args) {
     })
 }
 
+function concatSms(smsList){
+    let result = {
+        info: sms.info,
+        content : '',
+        index: []
+    }
+    // let parts = this.parts[pointer];
+    smsList.sort((a,b)=>a.parts.index-b.parts.index)
+
+    for (let i = 0; i < smsList.length; i++) {
+        result.content+=smsList[i].content;
+        result.index.push(smsList[i].index)
+    }
+}
+
 
 class Port extends EventEmitter {
     constructor(path, baudRate = 115200) {
-        super()
+        super();
+        this.parts={};
         this.path = path;
         this.serialPort = new SerialPort({
             path: path,
@@ -107,7 +123,7 @@ class Port extends EventEmitter {
         const parser = new ReadlineParser({ delimiter: '\r\n' });
 
         this.serialPort.pipe(parser);
-        this.serialPort.on('open',()=>{
+        this.serialPort.on('open', () => {
             console.log("Serial port open")
         })
 
@@ -129,7 +145,8 @@ class Port extends EventEmitter {
                 let r = data.split(':')[1].split(',');
                 let index = r[1];
                 let sms = await this.readSms(index);
-                this.emit('sms', sms);
+                this.buildSms(sms)
+                // this.emit('sms', sms);
                 return;
             }
 
@@ -249,9 +266,34 @@ class Port extends EventEmitter {
         })
     }
 
+    buildSms(sms) {
+        if (sms.parts) {
+            const {index,pointer,size} = sms.parts;
+            if (this.parts[pointer]){
+                this.parts[pointer].sms.push(sms);
+            }else {
+                this.parts[pointer] = {
+                    sms: [sms],
+                    timer : setTimeout(()=>{
+                        // resolve(concatSms(this.parts[pointer].sms));
+                        this.emit('sms',concatSms(this.parts[pointer].sms))
+                    }, 5000)
+                }
+                
+            }
+            // 构建完毕
+            if (this.parts[pointer].sms.length==size){
+                clearTimeout(this.parts[pointer].timer)
+                // resolve(concatSms(this.parts[pointer].sms))
+                this.emit('sms',concatSms(this.parts[pointer].sms))
+            }
+        } else {
+            // return sms;
+            this.emit('sms',sms)
+        }
+    }
+
     async init() {
-
-
         await sleep(1000)
         await this.onlySend('ATE1')
         await this.sendCmd('AT');
@@ -363,12 +405,25 @@ class Port extends EventEmitter {
 
         let info = {}
         let content = '';
+        let parts = undefined;
         if (out instanceof Deliver) {
+            if (out.getParts() && out.getParts().length && out.getParts()[0].header) {
+                let size = out.getParts()[0].header.getSegments()
+                let index = out.getParts()[0].header.getCurrent();
+                let pointer = out.getParts()[0].header.getPointer();
+                parts = {
+                    pointer,
+                    size,
+                    index
+                }
+            }
+
             content = out.data.getText();
             info.from = out.address.phone;
             info.time = out.serviceCenterTimeStamp.time * 1000;
         }
         return {
+            parts,
             info,
             content
         }
@@ -379,8 +434,8 @@ class Port extends EventEmitter {
         console.log("read cmgr data res:%o", data.res)
         if (data.res.length == 2) {
             let smsData = this.parseSms(data.res[1].trim().replace(/"/g, ''));
-            if (smsData){
-                smsData.index = idx;
+            if (smsData) {
+                smsData.index = [idx];
             }
             return smsData;
         }
@@ -420,7 +475,7 @@ class Port extends EventEmitter {
                     let smsData = this.parseSms(cs[i + 1]);
 
                     if (smsData) {
-                       smsData.index = index;
+                        smsData.index = [index];
                     }
                     all.push(smsData);
                 } catch (e) {

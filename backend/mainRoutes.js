@@ -41,7 +41,9 @@ async function updateSimSms(port) {
                     content
                 }
             })
-            await port.deleteSms(index);
+            for (let idx of index){
+                await port.deleteSms(idx);
+            }
         } catch (e) {
 
             if (e?.message && e.message.indexOf('Unique constraint failed on the fields: (`uid`)') > -1) {

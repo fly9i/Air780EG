@@ -92,26 +92,28 @@ String.prototype.format = function (args) {
     })
 }
 
-function concatSms(smsList){
+function concatSms(smsList) {
     let result = {
-        info: sms.info,
-        content : '',
+        info: smsList[0].info,
+        content: '',
         index: []
     }
     // let parts = this.parts[pointer];
-    smsList.sort((a,b)=>a.parts.index-b.parts.index)
+    smsList.sort((a, b) => a.parts.index - b.parts.index)
 
     for (let i = 0; i < smsList.length; i++) {
-        result.content+=smsList[i].content;
-        result.index.push(smsList[i].index)
+        result.content += smsList[i].content;
+        result.index = result.index.concat(smsList[i].index)
     }
+
+    return result
 }
 
 
 class Port extends EventEmitter {
     constructor(path, baudRate = 115200) {
         super();
-        this.parts={};
+        this.parts = {};
         this.path = path;
         this.serialPort = new SerialPort({
             path: path,
@@ -268,28 +270,30 @@ class Port extends EventEmitter {
 
     buildSms(sms) {
         if (sms.parts) {
-            const {index,pointer,size} = sms.parts;
-            if (this.parts[pointer]){
+            const { index, pointer, size } = sms.parts;
+            if (this.parts[pointer]) {
                 this.parts[pointer].sms.push(sms);
-            }else {
+            } else {
                 this.parts[pointer] = {
                     sms: [sms],
-                    timer : setTimeout(()=>{
+                    timer: setTimeout(() => {
                         // resolve(concatSms(this.parts[pointer].sms));
-                        this.emit('sms',concatSms(this.parts[pointer].sms))
+                        this.emit('sms', concatSms(this.parts[pointer].sms))
+                        delete this.parts[pointer]
                     }, 5000)
                 }
-                
+
             }
             // 构建完毕
-            if (this.parts[pointer].sms.length==size){
+            if (this.parts[pointer].sms.length == size) {
                 clearTimeout(this.parts[pointer].timer)
                 // resolve(concatSms(this.parts[pointer].sms))
-                this.emit('sms',concatSms(this.parts[pointer].sms))
+                this.emit('sms', concatSms(this.parts[pointer].sms))
+                delete this.parts[pointer]
             }
         } else {
             // return sms;
-            this.emit('sms',sms)
+            this.emit('sms', sms)
         }
     }
 
@@ -396,8 +400,16 @@ class Port extends EventEmitter {
     }
 
     async deleteSms(idx) {
-        let data = await this.sendCmd(`AT+CMGD=${idx}`);
-        console.log("delete cmgr data res:%o", data.res)
+        if (Object.prototype.toString.apply(idx) === '[object Array]') {
+            for (let index of idx) {
+                let data = await this.sendCmd(`AT+CMGD=${index}`);
+                console.log("delete cmgr data res:%o", data.res)
+            }
+        } else {
+            let data = await this.sendCmd(`AT+CMGD=${idx}`);
+            console.log("delete cmgr data res:%o", data.res)
+        }
+
     }
 
     parseSms(data) {

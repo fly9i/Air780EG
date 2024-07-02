@@ -109,7 +109,6 @@ function concatSms(smsList) {
     return result
 }
 
-
 class Port extends EventEmitter {
     constructor(path, baudRate = 115200) {
         super();
@@ -151,7 +150,8 @@ class Port extends EventEmitter {
                 // this.emit('sms', sms);
                 return;
             }
-
+            this.emit('data', data);
+            
             if (this.pendingCommands.length > 0) {
                 const currentCommand = this.pendingCommands[0];
                 if (data.includes('OK') || data.includes('ERROR')) {
@@ -453,15 +453,40 @@ class Port extends EventEmitter {
         }
     }
 
+    sendSmsCmd(cmd){
+        return new  Promise((resolve, reject) => {
+            this.serialPort.write(cmd)
+            this.on('data', (data) => {
+                console.log("send sms cmd,receive data:%o", data)
+                if (data.indexOf('AT+CMGS=')>-1 || data.indexOf('OK')>-1 || data.indexOf('ERROR')>-1) {
+                    setTimeout(() => {
+                        this.removeAllListeners('data');
+                        resolve();
+                    },100)
+                    
+                }
+            })
+        })
+    }
     async sendSms(number, str) {
 
         const submit = new Submit(number, str);
 
-        let content = submit.toString();
-        let len = content.length / 2 - 1;
-        this.serialPort.write(Buffer.from(`AT+CMGS=${len}`) + '\r')
-        await sleep(1000);
-        this.serialPort.write(Buffer.from(content) + '\x1A')
+        try {
+            let arr = submit.toString().split('\n');
+            let i = 0;
+            for (let i =0;i<submit.getParts().length;i++) {
+                let part = submit.getParts()[i];
+                let size = part.size;
+                let data = arr[i];
+                // await this.sendCmd(`AT+CMGS=${size}`);
+                await this.sendSmsCmd(Buffer.from(`AT+CMGS=${size}`)+'\r');
+                await this.sendSmsCmd(Buffer.from(data) + '\x1A')
+            }
+        } catch (e) {
+            console.error(e);
+            throw e;
+        }
 
     }
     async cancelSms() {
@@ -503,9 +528,3 @@ class Port extends EventEmitter {
 
 
 export { Port }
-
-
-// console.log(parseUnicode('4f60597d'))
-
-// console.log(getUnicode('你好'));
-// console.log(getUnicode2('你好'));
